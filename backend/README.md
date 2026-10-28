@@ -37,3 +37,13 @@ The production API refuses to start with SQLite. Cross-site cookies require HTTP
 - This service authenticates accounts and supports profile updates. **It does not yet store or authorize transactions, budgets, or savings goals on the server.** The current finance data still lives in browser localStorage and must be migrated to authenticated per-user API endpoints before real sensitive financial data is considered protected.
 - Google OAuth is not implemented. Do not present the Google button as functional until OAuth is configured.
 - Review deployment logs and configure monitoring, backups, HTTPS, and an appropriate privacy policy before public use.
+
+
+## Account sign-in flow
+
+- Sign up with full name, a unique User ID, one password (minimum 12 characters), and an optional phone number.
+- Log in with either the User ID or the phone number saved on the account, plus the same password.
+- User IDs accept letters, numbers, dots, underscores, and hyphens.
+- Phone numbers are normalized and unique, but this version does not verify phone ownership with SMS OTP. Do not use an unverified phone number for account recovery; add an SMS verification provider before enabling phone-based recovery.
+- The old internal email database column is retained only for compatibility with existing deployments. It is not requested from users or returned by the API.
+- The demo-workspace bypass and Google sign-in button have been removed from the normal login/signup screen so the interface cannot imply that either is a secure sign-in method.
