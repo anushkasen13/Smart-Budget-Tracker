@@ -5,6 +5,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from email_validator import EmailNotValidError, validate_email
 from typing import Generator
+from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -88,8 +89,24 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 async def enforce_browser_origin(request: Request, call_next):
     if APP_ENV == "production" and request.method in {"POST", "PATCH", "PUT", "DELETE"}:
         origin = request.headers.get("origin", "").rstrip("/")
-        if origin not in FRONTEND_ORIGINS:
-            return Response(content='{"detail":"Request origin is not allowed."}', status_code=403, media_type="application/json")
+        allowed = origin in FRONTEND_ORIGINS
+
+        # The frontend calls this API through Vercel's same-origin /api proxy.
+        # In that case, accept the browser origin only when it matches the
+        # forwarded public host and HTTPS scheme set by the hosting proxy.
+        if not allowed and origin:
+            parsed_origin = urlsplit(origin)
+            forwarded_host = request.headers.get("x-forwarded-host", "").split(",")[0].strip().lower()
+            forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower()
+            if (
+                parsed_origin.scheme == "https"
+                and parsed_origin.netloc.lower() == forwarded_host
+                and forwarded_proto == "https"
+            ):
+                allowed = True
+
+        if not allowed:
+            return Response(content='{"detail":"Request origin is not allowed. Check the API FRONTEND_ORIGINS setting."}', status_code=403, media_type="application/json")
     return await call_next(request)
 
 app.add_middleware(
