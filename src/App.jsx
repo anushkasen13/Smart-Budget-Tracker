@@ -90,6 +90,8 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [userName, setUserName] = useState(() => { try { return localStorage.getItem("sbt-user-name") || ""; } catch { return ""; } });
+  const [profileEmail, setProfileEmail] = useState(() => { try { return localStorage.getItem("sbt-user-email") || ""; } catch { return ""; } });
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [transactions, setTransactions] = useState(() => {
     try { return JSON.parse(localStorage.getItem("sbt-transactions")) || initialTransactions; }
     catch { return initialTransactions; }
@@ -215,6 +217,9 @@ export default function App() {
     { label: "PREFERENCES", items: [{ name: "Settings", emoji: "⚙️" }, { name: "Help & support", emoji: "❔" }] }
   ];
   const changePage = (name) => { setPage(name); setMobileNav(false); };
+  const openProfile = () => { setShowProfileMenu(false); setPage("My profile"); };
+  const saveProfile = (event) => { event.preventDefault(); const cleanName = userName.trim(); if (!cleanName) { notify("Please enter your name."); return; } setUserName(cleanName); try { localStorage.setItem("sbt-user-name", cleanName); localStorage.setItem("sbt-user-email", profileEmail.trim()); } catch {} notify("Profile updated."); };
+  const logOut = () => { setShowProfileMenu(false); setAuthMode("login"); setAuthPassword(""); setPage("Overview"); setScreen("auth"); };
 
   const enterDemo = (event) => {
     event?.preventDefault();
@@ -224,7 +229,8 @@ export default function App() {
       ? authName.trim()
       : (storedName || authEmail.trim().split("@")[0].replace(/[._-]+/g, " ").replace(/\b\w/g, letter => letter.toUpperCase()) || "there");
     setUserName(derivedName);
-    try { localStorage.setItem("sbt-user-name", derivedName); } catch {}
+    setProfileEmail(authEmail.trim());
+    try { localStorage.setItem("sbt-user-name", derivedName); localStorage.setItem("sbt-user-email", authEmail.trim()); } catch {}
     setScreen("dashboard");
   };
   const heroSlides = [
@@ -250,9 +256,11 @@ export default function App() {
     </aside>
 
     <main className="main-area">
-      <header className="topbar"><div className="topbar-left"><button className="mobile-menu icon-button" onClick={() => setMobileNav(true)} aria-label="Open navigation"><Menu size={21} /></button><div className="breadcrumb">Workspace <span>/</span> <strong>{page}</strong></div></div><div className="topbar-actions"><div className="date-chip"><CalendarDays size={15} /> {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</div><button className="icon-button notification-button" aria-label="Notifications" onClick={() => notify("You're all caught up.")}><Bell size={18} /><i /></button><div className="top-avatar">AS</div></div></header>
+      <header className="topbar"><div className="topbar-left"><button className="mobile-menu icon-button" onClick={() => setMobileNav(true)} aria-label="Open navigation"><Menu size={21} /></button><div className="breadcrumb">Workspace <span>/</span> <strong>{page}</strong></div></div><div className="topbar-actions"><div className="date-chip"><CalendarDays size={15} /> {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</div><button className="icon-button notification-button" aria-label="Notifications" onClick={() => notify("You're all caught up.")}><Bell size={18} /><i /></button><div className="profile-menu-wrap"><button type="button" className="top-avatar profile-avatar-button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded={showProfileMenu} onClick={() => setShowProfileMenu(value => !value)}>{(userName.trim().split(/\s+/)[0] || "AS").slice(0,2).toUpperCase()}</button>{showProfileMenu && <div className="profile-dropdown" role="menu"><div className="profile-dropdown-head"><strong>{userName.trim().split(/\s+/)[0] || "My account"}</strong><span>{profileEmail || authEmail || "Local demo profile"}</span></div><button role="menuitem" onClick={openProfile}><span>👤</span> My profile</button><button role="menuitem" onClick={() => { setShowProfileMenu(false); changePage("Settings"); }}><span>⚙️</span> Settings</button><div className="profile-dropdown-divider"></div><button role="menuitem" className="profile-logout" onClick={logOut}><LogOut size={16}/> Log out</button></div>}</div></div></header>
 
       <div className="page-content">
+        {page === "My profile" && <><SectionHeading eyebrow="YOUR ACCOUNT" title="My profile" detail="Edit the details shown in your SmartBudget workspace."/><div className="profile-page-layout"><section className="panel profile-edit-card"><div className="profile-large-avatar">{(userName.trim().split(/\s+/)[0] || "AS").slice(0,2).toUpperCase()}</div><h3>Personal details</h3><p>These details are saved locally in this browser in this demo.</p><form className="profile-edit-form" onSubmit={saveProfile}><label>Full name<input required maxLength="80" value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Enter your name"/></label><label>Email address<input type="email" maxLength="120" value={profileEmail} onChange={e=>setProfileEmail(e.target.value)} placeholder="you@example.com"/></label><div className="profile-edit-actions"><button type="button" className="secondary-button" onClick={()=>changePage("Overview")}>Cancel</button><button type="submit" className="primary-button"><Check size={16}/> Save changes</button></div></form></section><section className="panel profile-info-card"><h3>Account & privacy</h3><p>This prototype stores your profile and finance records in this browser only. It does not yet use secure server-side accounts or sync across devices.</p><button className="secondary-button" onClick={()=>changePage("Settings")}>Open settings <ArrowUpRight size={15}/></button><button className="danger-button" onClick={logOut}><LogOut size={16}/> Log out</button></section></div></>}
+
         {page === "Overview" && <><div className="welcome-row"><div><div className="eyebrow">YOUR FINANCIAL SNAPSHOT</div><h1>Good evening{userName ? ` ${userName.trim().split(/\s+/)[0].toUpperCase()}` : ""} <span className="wave">✦</span></h1><p>Here's how your money is doing. One step at a time.</p></div><button className="primary-button" onClick={() => setShowAdd(true)}><Plus size={17} /> Add transaction</button></div>
           <div className="summary-grid">
             <div className="summary-card balance-card"><div className="summary-top"><span>Total balance</span><span className="summary-icon violet"><Wallet size={18} /></span></div><div className="summary-amount">{money(balance)}</div><div className="summary-foot"><span className="trend-pill"><TrendingUp size={13} /> Rolling balance</span><span className="muted">All recorded activity</span></div><div className="balance-spark"><svg viewBox="0 0 300 42" preserveAspectRatio="none"><path d="M0 34 C25 30,35 37,56 24 S90 29,112 15 S145 28,169 17 S202 23,222 8 S260 18,300 2" fill="none" stroke="#b9adff" strokeWidth="2.5" /></svg></div></div>
