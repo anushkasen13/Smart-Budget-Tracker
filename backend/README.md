@@ -14,7 +14,7 @@ FastAPI backend for real email/password authentication. It uses PostgreSQL in pr
    - `FRONTEND_ORIGINS=http://localhost:5173,http://127.0.0.1:5173`
 5. Run: `uvicorn main:app --reload --port 8000`.
 
-Set frontend `VITE_API_BASE_URL=http://localhost:8000` and restart Vite.
+Set frontend `VITE_API_BASE_URL=/api` and restart Vite. Vite proxies `/api` to the local Python service.
 
 ## Production deployment
 
@@ -23,7 +23,7 @@ Deploy this directory as a Python web service (for example, Render):
 - Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
 - Use a managed, persistent PostgreSQL database; set `DATABASE_URL` to its connection string.
 - Set `APP_ENV=production`, `COOKIE_SECURE=true`, and `FRONTEND_ORIGINS` to the exact HTTPS origin of the deployed frontend (no path or trailing slash).
-- Set frontend deployment variable `VITE_API_BASE_URL` to the backend's HTTPS origin, then rebuild/redeploy the frontend.
+- The root `vercel.json` proxies `/api/*` to the Render service on the same frontend origin, so set frontend deployment variable `VITE_API_BASE_URL=/api` and rebuild/redeploy. If Render assigns a different hostname, update `vercel.json` accordingly.
 - Never commit database URLs, passwords, API keys, or secrets.
 
 The production API refuses to start with SQLite. Cross-site cookies require HTTPS and `SameSite=None`; this app sets those when `COOKIE_SECURE=true`.
