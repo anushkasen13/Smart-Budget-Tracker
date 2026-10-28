@@ -336,3 +336,8 @@ h1,h2,h3{color:#e8edff}
 .toast{background:#e7edff;color:#182445}
 .empty-state{color:#91a2c9}.empty-state strong{color:#dbe5ff}
 @media(max-width:920px){.sidebar{box-shadow:12px 0 40px #02071388}.mobile-scrim{background:#030817b8}}
+
+/* Small interaction details added during functional hardening. */
+.delete-transaction{display:grid;place-items:center;flex-shrink:0;width:30px;height:30px;border:1px solid #34466f;border-radius:8px;background:#172344;color:#9badd3}.delete-transaction:hover{background:#492c3a;border-color:#7c4554;color:#ff9dba}
+.settings-actions{display:flex;gap:8px;flex-wrap:wrap}.import-button{position:relative;overflow:hidden;cursor:pointer}.import-button input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+@media(max-width:650px){.settings-actions>*{flex:1;min-width:140px}}
