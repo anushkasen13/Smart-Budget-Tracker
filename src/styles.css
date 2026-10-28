@@ -586,3 +586,5 @@ h1,h2,h3{color:#e8edff}
 @media(max-width:1200px){.auth-collage-columns{gap:0;padding:0 4px}.auth-collage-column .auth-collage-card{width:94%;min-height:140px;flex-basis:140px;padding:15px 13px}.auth-collage-column .auth-collage-card strong{font-size:15px}}
 @media(max-width:920px){.auth-right.reference-auth-collage{display:none}}
 @media(prefers-reduced-motion:reduce){.auth-collage-column-track{animation-play-state:running}}
+
+.brand-mark .brand-money-emoji{font-size:24px;line-height:1;display:block}
