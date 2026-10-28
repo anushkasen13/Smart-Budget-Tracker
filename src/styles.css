@@ -341,3 +341,6 @@ h1,h2,h3{color:#e8edff}
 .delete-transaction{display:grid;place-items:center;flex-shrink:0;width:30px;height:30px;border:1px solid #34466f;border-radius:8px;background:#172344;color:#9badd3}.delete-transaction:hover{background:#492c3a;border-color:#7c4554;color:#ff9dba}
 .settings-actions{display:flex;gap:8px;flex-wrap:wrap}.import-button{position:relative;overflow:hidden;cursor:pointer}.import-button input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 @media(max-width:650px){.settings-actions>*{flex:1;min-width:140px}}
+
+/* In-app forms for budgets and savings goals. */
+.entry-modal{max-width:500px}.entry-modal form{display:flex;flex-direction:column;gap:16px}.entry-modal label{display:flex;flex-direction:column;gap:7px;color:#dce5ff;font-size:13px;font-weight:600}.entry-modal input{width:100%;box-sizing:border-box;border:1px solid #304064;border-radius:10px;background:#101a36;color:#edf2ff;padding:12px 13px;font:inherit;outline:none}.entry-modal input:focus{border-color:#718cff;box-shadow:0 0 0 3px #718cff25}.entry-context{display:flex;flex-direction:column;gap:5px;padding:12px 14px;border:1px solid #2c3b60;border-radius:10px;background:#111c38}.entry-context span,.entry-context small{font-size:12px;color:#96a8d0}.entry-context strong{font-size:15px;color:#edf2ff}
