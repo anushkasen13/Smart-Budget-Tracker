@@ -1,7 +1,9 @@
 import hashlib
 import os
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
+from email_validator import EmailNotValidError, validate_email
 from typing import Generator
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
@@ -101,8 +103,8 @@ app.add_middleware(
 class RegisterBody(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     username: str = Field(min_length=3, max_length=40, pattern=r"^[A-Za-z0-9_.-]+$")
-    phone: str | None = Field(default=None, max_length=20, pattern=r"^\+?[0-9 ()-]{7,20}$")
-    password: str = Field(min_length=12, max_length=128)
+    contact: str = Field(min_length=7, max_length=254)
+    password: str = Field(min_length=8, max_length=128)
 
 class LoginBody(BaseModel):
     identifier: str = Field(min_length=3, max_length=254)
@@ -184,20 +186,33 @@ def public_user(user: User) -> dict:
 @limiter.limit("5/hour")
 def register(request: Request, body: RegisterBody, response: Response, db: Session = Depends(get_db)) -> dict:
     username = body.username.strip().lower()
-    phone = normalize_phone(body.phone)
-    existing = db.scalar(select(User).where(or_(User.username == username, User.email == f"{username}@accounts.smartbudget.invalid")))
-    if existing: raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That User ID is already taken. Please choose another.")
+    contact = body.contact.strip()
+    phone = None
+    if "@" in contact:
+        try:
+            email = validate_email(contact, check_deliverability=False).normalized.lower()
+        except EmailNotValidError:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Enter a valid email address or phone number.")
+    else:
+        phone = normalize_phone(contact)
+        if not phone or not re.fullmatch(r"\+?[0-9]{7,15}", phone):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Enter a valid email address or phone number.")
+        email = f"{username}@accounts.smartbudget.invalid"
+
+    existing = db.scalar(select(User).where(or_(User.username == username, User.email == email)))
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That username or email address is already registered.")
     if phone and db.scalar(select(User).where(User.phone == phone)):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That phone number is already registered.")
-    # Keep the legacy email column internal for compatibility with existing deployments.
-    user = User(name=body.name.strip(), username=username, phone=phone, email=f"{username}@accounts.smartbudget.invalid", password_hash=password_hasher.hash(body.password))
+
+    user = User(name=body.name.strip(), username=username, phone=phone, email=email, password_hash=password_hasher.hash(body.password))
     db.add(user)
     try:
         db.commit()
         db.refresh(user)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That User ID or phone number is already registered.")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That username, email or phone number is already registered.")
     create_session(db, user, response)
     return public_user(user)
 
@@ -231,7 +246,8 @@ def update_profile(body: ProfileUpdate, user: User = Depends(get_current_user), 
     user.name = body.name.strip()
     user.username = username
     user.phone = phone
-    user.email = f"{username}@accounts.smartbudget.invalid"
+    if user.email.endswith("@accounts.smartbudget.invalid"):
+        user.email = f"{username}@accounts.smartbudget.invalid"
     try:
         db.commit()
         db.refresh(user)
