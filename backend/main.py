@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from pwdlib import PasswordHash
-from sqlalchemy import DateTime, ForeignKey, String, create_engine, select
+from sqlalchemy import DateTime, ForeignKey, String, create_engine, select, or_, inspect, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -51,6 +51,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(80))
     email: Mapped[str] = mapped_column(String(254), unique=True, index=True)
+    username: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    phone: Mapped[str | None] = mapped_column(String(20), unique=True, index=True, nullable=True)
     password_hash: Mapped[str] = mapped_column(String(512))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     sessions: Mapped[list["LoginSession"]] = relationship(back_populates="user", cascade="all, delete-orphan")
@@ -65,6 +67,17 @@ class LoginSession(Base):
     user: Mapped[User] = relationship(back_populates="sessions")
 
 Base.metadata.create_all(bind=engine)
+
+# Idempotent migration for the earlier email-only prototype.
+with engine.begin() as connection:
+    columns = {column["name"] for column in inspect(engine).get_columns("users")}
+    if "username" not in columns:
+        connection.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR(40)"))
+    if "phone" not in columns:
+        connection.execute(text("ALTER TABLE users ADD COLUMN phone VARCHAR(20)"))
+    connection.execute(text("UPDATE users SET username = 'legacy_' || id WHERE username IS NULL OR username = ''"))
+    connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_username ON users (username)"))
+    connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_phone ON users (phone)"))
 
 app = FastAPI(title="SmartBudget Authentication API", version="1.0.0")
 app.state.limiter = limiter
@@ -87,22 +100,25 @@ app.add_middleware(
 
 class RegisterBody(BaseModel):
     name: str = Field(min_length=1, max_length=80)
-    email: EmailStr
+    username: str = Field(min_length=3, max_length=40, pattern=r"^[A-Za-z0-9_.-]+$")
+    phone: str | None = Field(default=None, max_length=20, pattern=r"^\+?[0-9 ()-]{7,20}$")
     password: str = Field(min_length=12, max_length=128)
 
 class LoginBody(BaseModel):
-    email: EmailStr
+    identifier: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=1, max_length=128)
 
 class ProfileUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=80)
-    email: EmailStr
+    username: str = Field(min_length=3, max_length=40, pattern=r"^[A-Za-z0-9_.-]+$")
+    phone: str | None = Field(default=None, max_length=20, pattern=r"^\+?[0-9 ()-]{7,20}$")
 
 class UserView(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     name: str
-    email: EmailStr
+    username: str
+    phone: str | None = None
 
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
@@ -156,54 +172,70 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "smartbudget-auth"}
 
+def normalize_phone(phone: str | None) -> str | None:
+    if not phone: return None
+    normalized = "".join(character for character in phone if character.isdigit() or character == "+")
+    return normalized or None
+
+def public_user(user: User) -> dict:
+    return {"id": user.id, "name": user.name, "username": user.username, "phone": user.phone}
+
 @app.post("/auth/register", response_model=UserView, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/hour")
-def register(request: Request, body: RegisterBody, response: Response, db: Session = Depends(get_db)) -> User:
-    email = str(body.email).strip().lower()
-    existing = db.scalar(select(User).where(User.email == email))
-    if existing:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="An account with this email already exists. Please log in.")
-    user = User(name=body.name.strip(), email=email, password_hash=password_hasher.hash(body.password))
+def register(request: Request, body: RegisterBody, response: Response, db: Session = Depends(get_db)) -> dict:
+    username = body.username.strip().lower()
+    phone = normalize_phone(body.phone)
+    existing = db.scalar(select(User).where(or_(User.username == username, User.email == f"{username}@accounts.smartbudget.invalid")))
+    if existing: raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That User ID is already taken. Please choose another.")
+    if phone and db.scalar(select(User).where(User.phone == phone)):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That phone number is already registered.")
+    # Keep the legacy email column internal for compatibility with existing deployments.
+    user = User(name=body.name.strip(), username=username, phone=phone, email=f"{username}@accounts.smartbudget.invalid", password_hash=password_hasher.hash(body.password))
     db.add(user)
     try:
         db.commit()
         db.refresh(user)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="An account with this email already exists. Please log in.")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That User ID or phone number is already registered.")
     create_session(db, user, response)
-    return user
+    return public_user(user)
 
 @app.post("/auth/login", response_model=UserView)
 @limiter.limit("10/minute")
-def login(request: Request, body: LoginBody, response: Response, db: Session = Depends(get_db)) -> User:
-    email = str(body.email).strip().lower()
-    user = db.scalar(select(User).where(User.email == email))
+def login(request: Request, body: LoginBody, response: Response, db: Session = Depends(get_db)) -> dict:
+    identifier = body.identifier.strip()
+    normalized_identifier = identifier.lower()
+    phone_identifier = normalize_phone(identifier)
+    user = db.scalar(select(User).where(or_(User.username == normalized_identifier, User.phone == phone_identifier, User.email == normalized_identifier)))
     if not user or not password_hasher.verify(body.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email or password is incorrect.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID/phone number or password is incorrect.")
     create_session(db, user, response)
-    return user
+    return public_user(user)
 
 @app.get("/auth/me", response_model=UserView)
-def me(user: User = Depends(get_current_user)) -> User:
-    return user
+def me(user: User = Depends(get_current_user)) -> dict:
+    return public_user(user)
 
 @app.patch("/auth/me", response_model=UserView)
-def update_profile(body: ProfileUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> User:
-    email = str(body.email).strip().lower()
-    existing = db.scalar(select(User).where(User.email == email, User.id != user.id))
-    if existing:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That email address is already in use.")
+def update_profile(body: ProfileUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
+    username = body.username.strip().lower()
+    phone = normalize_phone(body.phone)
+    if db.scalar(select(User).where(User.username == username, User.id != user.id)):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That User ID is already taken.")
+    if phone and db.scalar(select(User).where(User.phone == phone, User.id != user.id)):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That phone number is already registered.")
     user.name = body.name.strip()
-    user.email = email
+    user.username = username
+    user.phone = phone
+    user.email = f"{username}@accounts.smartbudget.invalid"
     try:
         db.commit()
         db.refresh(user)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That email address is already in use.")
-    return user
-
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That User ID or phone number is already in use.")
+    return public_user(user)
 @app.post("/auth/logout")
 def logout(request: Request, response: Response, db: Session = Depends(get_db)) -> dict[str, str]:
     token = request.cookies.get(SESSION_COOKIE)
