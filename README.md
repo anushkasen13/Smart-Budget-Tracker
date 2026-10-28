@@ -70,14 +70,14 @@ Dashboard trends and spending breakdowns are calculated from the transactions cu
 
 ## Secure email/password authentication (Python API)
 
-The repository now includes a FastAPI authentication service in `backend/`. The frontend only uses real sign-in when `VITE_API_BASE_URL` points to a deployed HTTPS API; otherwise the login form stays fail-closed and the separate demo workspace remains available for sample-data previews.
+The repository now includes a FastAPI authentication service in `backend/`. The frontend only uses real sign-in when `VITE_API_BASE_URL` is configured (production value: `/api`); otherwise the login form stays fail-closed and the separate demo workspace remains available for sample-data previews.
 
 ### Deploy the API
 
 1. In Render, create a new Blueprint from this repository and let it read `render.yaml`.
 2. The blueprint provisions a Python web service and PostgreSQL database. Wait for both to finish provisioning.
 3. In the `smartbudget-auth-api` service environment, set `FRONTEND_ORIGINS` to the exact HTTPS origin of your deployed frontend (for example `https://your-app.vercel.app`, with no path or trailing slash). Keep `APP_ENV=production` and `COOKIE_SECURE=true`.
-4. In Vercel, set `VITE_API_BASE_URL` to the API's HTTPS origin (for example `https://smartbudget-auth-api.onrender.com`) and redeploy the frontend.
+4. The repository's `vercel.json` proxies `/api/*` through the frontend origin to `https://smartbudget-auth-api.onrender.com`, avoiding cross-site cookie restrictions. In Vercel, set `VITE_API_BASE_URL=/api` and redeploy the frontend. If Render assigns a different service hostname, update the destination in `vercel.json` to that exact HTTPS URL.
 5. Visit the API's `/health` endpoint and test registration, logout, and wrong-password rejection before using accounts.
 
 Local API setup and required environment variables are documented in `backend/README.md`.
