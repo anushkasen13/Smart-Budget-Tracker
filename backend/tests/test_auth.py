@@ -1,6 +1,9 @@
 from fastapi.testclient import TestClient
 from uuid import uuid4
+from pathlib import Path
+import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from main import app
 
 client = TestClient(app)
