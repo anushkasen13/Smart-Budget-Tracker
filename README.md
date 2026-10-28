@@ -52,7 +52,7 @@ npm run preview
 - Tested forecasting, anomaly detection, or trained ML models
 - Production security review and deployment configuration
 
-Some dashboard chart and category breakdown values are illustrative sample data. Do not treat them as actual personal analytics. The app currently stores transactions in the browser only; clearing browser data can erase them. Do not enter sensitive real financial data until authentication, cloud persistence, and security controls have been implemented and tested.
+Dashboard trends and spending breakdowns are calculated from the transactions currently stored in the browser. The initial transaction list is demo data; delete or reset it before using the workspace for your own records. The app currently stores transactions in the browser only; clearing browser data can erase them. Do not enter sensitive real financial data until authentication, cloud persistence, and security controls have been implemented and tested.
 
 ## Money-handling principles
 
