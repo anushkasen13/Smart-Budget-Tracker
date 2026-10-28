@@ -588,3 +588,6 @@ h1,h2,h3{color:#e8edff}
 @media(prefers-reduced-motion:reduce){.auth-collage-column-track{animation-play-state:running}}
 
 .brand-mark .brand-money-emoji{font-size:24px;line-height:1;display:block}
+
+/* Sidebar promo was removed to keep navigation calm and focused. */
+.sidebar-bottom .upgrade-card{display:none!important}
