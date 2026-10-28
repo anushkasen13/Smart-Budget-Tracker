@@ -561,3 +561,28 @@ h1,h2,h3{color:#e8edff}
   .nav-emoji{width:24px;min-width:24px;display:inline-flex;align-items:center;justify-content:center;font-size:19px;line-height:1}
   .nav-item{gap:13px}
 }
+
+
+/* Reference auth motion: three independently scrolling vertical flashcard lanes. */
+.auth-right.reference-auth-collage{position:relative;display:block;min-height:100vh;height:100%;overflow:hidden;padding:0;background:linear-gradient(145deg,#8bcaff 0%,#d8efff 100%)}
+.auth-collage-columns{position:absolute;inset:-70px 0 -70px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;overflow:hidden;padding:0 12px}
+.auth-collage-column{height:100%;min-width:0;overflow:hidden;position:relative}
+.auth-collage-column-track{display:flex;flex-direction:column;gap:22px;width:100%;will-change:transform;animation:auth-column-down 31s linear infinite}
+.auth-collage-column-group{display:flex;flex-direction:column;align-items:center;gap:26px;flex:0 0 auto;width:100%;padding:12px 0}
+.auth-collage-column .auth-collage-card{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:88%;max-width:260px;min-width:0;min-height:155px;flex:0 0 155px;padding:18px 17px;border-radius:19px;transform-origin:center;box-sizing:border-box}
+.auth-collage-column .collage-food{transform:rotate(-12deg)}
+.auth-collage-column .collage-headphones{transform:rotate(-10deg)}
+.auth-collage-column .collage-available{transform:rotate(-13deg)}
+.auth-collage-column .collage-trend{transform:rotate(-10deg)}
+.auth-collage-column .collage-needs{transform:rotate(-12deg)}
+.auth-collage-column .collage-split{transform:rotate(-11deg)}
+.auth-collage-column .collage-trip{transform:rotate(8deg)}
+.auth-collage-column .collage-rent{transform:rotate(-10deg)}
+.auth-collage-column .collage-forecast{transform:rotate(-12deg)}
+.auth-collage-column.column-1 .auth-collage-column-track,.auth-collage-column.column-3 .auth-collage-column-track{animation-name:auth-column-down}
+.auth-collage-column.column-2 .auth-collage-column-track{animation-name:auth-column-up;animation-duration:27s}
+@keyframes auth-column-down{from{transform:translateY(-50%)}to{transform:translateY(0)}}
+@keyframes auth-column-up{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+@media(max-width:1200px){.auth-collage-columns{gap:0;padding:0 4px}.auth-collage-column .auth-collage-card{width:94%;min-height:140px;flex-basis:140px;padding:15px 13px}.auth-collage-column .auth-collage-card strong{font-size:15px}}
+@media(max-width:920px){.auth-right.reference-auth-collage{display:none}}
+@media(prefers-reduced-motion:reduce){.auth-collage-column-track{animation-play-state:running}}
