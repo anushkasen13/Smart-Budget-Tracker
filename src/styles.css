@@ -696,3 +696,9 @@ body,.app-shell,.main-area{background:#141e38;color:#e8edff}
 :root[data-theme="light"] .profile-dropdown-divider{background:#e0e7f1}
 :root[data-theme="light"] .profile-dropdown>button.profile-logout{color:#b43c5e}
 @media(max-width:720px){.profile-page-layout{grid-template-columns:1fr}.profile-dropdown{right:-4px;width:220px}.profile-edit-card,.profile-info-card{padding:18px}}
+
+
+.auth-security-notice{display:flex;flex-direction:column;gap:5px;padding:11px 13px;margin:0 0 16px;border:1px solid #e4a54d;border-radius:10px;background:#fff4dc;color:#724a12;font-size:12px;line-height:1.45}
+.auth-security-notice strong{font-size:12px}
+.auth-security-notice span{font-size:11px}
+:root[data-theme="light"] .auth-security-notice{background:#fff4dc;color:#724a12;border-color:#e4a54d}
