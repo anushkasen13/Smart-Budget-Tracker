@@ -12,6 +12,9 @@ import {
   Tooltip, XAxis, YAxis
 } from "recharts";
 
+const AUTH_API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\\/+$/, "");
+const readLocalJson = (key, fallback) => { try { const value = localStorage.getItem(key); return value ? JSON.parse(value) : fallback; } catch { return fallback; } };
+
 const initialTransactions = [
   { id: 1, title: "Monthly salary", category: "Salary", type: "income", amount: 42000, date: "2026-10-25", method: "Bank transfer", note: "Monthly income", need: "Need" },
   { id: 2, title: "Apartment rent", category: "Housing", type: "expense", amount: 10500, date: "2026-10-24", method: "UPI", note: "October rent", need: "Need" },
@@ -89,15 +92,14 @@ export default function App() {
   const [authName, setAuthName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authUserId, setAuthUserId] = useState(null);
   const [userName, setUserName] = useState(() => { try { return localStorage.getItem("sbt-user-name") || ""; } catch { return ""; } });
   const [profileEmail, setProfileEmail] = useState(() => { try { return localStorage.getItem("sbt-user-email") || ""; } catch { return ""; } });
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [transactions, setTransactions] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("sbt-transactions")) || initialTransactions; }
-    catch { return initialTransactions; }
-  });
-  const [budgets, setBudgets] = useState(() => { try { return JSON.parse(localStorage.getItem("sbt-budgets")) || initialBudgets; } catch { return initialBudgets; } });
-  const [goals, setGoals] = useState(() => { try { return JSON.parse(localStorage.getItem("sbt-goals")) || initialGoals; } catch { return initialGoals; } });
+  const [transactions, setTransactions] = useState(() => readLocalJson("sbt-transactions", initialTransactions));
+  const [budgets, setBudgets] = useState(() => readLocalJson("sbt-budgets", initialBudgets));
+  const [goals, setGoals] = useState(() => readLocalJson("sbt-goals", initialGoals));
   const [showAdd, setShowAdd] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [query, setQuery] = useState("");
@@ -109,9 +111,24 @@ export default function App() {
   const [entryDialog, setEntryDialog] = useState(null);
   const [entryFields, setEntryFields] = useState({ name: "", amount: "", target: "", due: "" });
 
-  useEffect(() => { localStorage.setItem("sbt-transactions", JSON.stringify(transactions)); }, [transactions]);
-  useEffect(() => { localStorage.setItem("sbt-budgets", JSON.stringify(budgets)); }, [budgets]);
-  useEffect(() => { localStorage.setItem("sbt-goals", JSON.stringify(goals)); }, [goals]);
+  useEffect(() => { try { localStorage.setItem(authUserId ? `sbt-user-${authUserId}-transactions` : "sbt-transactions", JSON.stringify(transactions)); } catch {} }, [transactions, authUserId]);
+  useEffect(() => { try { localStorage.setItem(authUserId ? `sbt-user-${authUserId}-budgets` : "sbt-budgets", JSON.stringify(budgets)); } catch {} }, [budgets, authUserId]);
+  useEffect(() => { try { localStorage.setItem(authUserId ? `sbt-user-${authUserId}-goals` : "sbt-goals", JSON.stringify(goals)); } catch {} }, [goals, authUserId]);
+  useEffect(() => {
+    if (!AUTH_API_URL) return;
+    let cancelled = false;
+    fetch(`${AUTH_API_URL}/auth/me`, { credentials: "include" })
+      .then(async response => response.ok ? response.json() : null)
+      .then(user => {
+        if (cancelled || !user) return;
+        setAuthUserId(user.id); setUserName(user.name); setProfileEmail(user.email);
+        setTransactions(readLocalJson(`sbt-user-${user.id}-transactions`, []));
+        setBudgets(readLocalJson(`sbt-user-${user.id}-budgets`, []));
+        setGoals(readLocalJson(`sbt-user-${user.id}-goals`, []));
+        setScreen("dashboard");
+      }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   useEffect(() => { const timer = window.setInterval(() => setHeroSlide(index => (index + 1) % 4), 4200); return () => window.clearInterval(timer); }, []);
 
   const totals = useMemo(() => transactions.reduce((acc, item) => {
@@ -218,23 +235,67 @@ export default function App() {
   ];
   const changePage = (name) => { setPage(name); setMobileNav(false); };
   const openProfile = () => { setShowProfileMenu(false); setPage("My profile"); };
-  const saveProfile = (event) => { event.preventDefault(); const cleanName = userName.trim(); if (!cleanName) { notify("Please enter your name."); return; } setUserName(cleanName); try { localStorage.setItem("sbt-user-name", cleanName); localStorage.setItem("sbt-user-email", profileEmail.trim()); } catch {} notify("Profile updated."); };
-  const logOut = () => { setShowProfileMenu(false); setAuthMode("login"); setAuthPassword(""); setPage("Overview"); setScreen("auth"); };
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    const cleanName = userName.trim();
+    if (!cleanName) { notify("Please enter your name."); return; }
+    if (authUserId && AUTH_API_URL) {
+      try {
+        const response = await fetch(`${AUTH_API_URL}/auth/me`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: cleanName, email: profileEmail.trim() }) });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.detail || "Unable to update your profile.");
+        setUserName(data.name); setProfileEmail(data.email);
+        try { localStorage.setItem("sbt-user-name", data.name); localStorage.setItem("sbt-user-email", data.email); } catch {}
+        notify("Profile updated."); return;
+      } catch (error) { notify(error.message || "Unable to update your profile."); return; }
+    }
+    setUserName(cleanName);
+    try { localStorage.setItem("sbt-user-name", cleanName); localStorage.setItem("sbt-user-email", profileEmail.trim()); } catch {}
+    notify("Demo profile updated locally.");
+  };
+  const logOut = async () => {
+    setShowProfileMenu(false);
+    if (authUserId && AUTH_API_URL) { try { await fetch(`${AUTH_API_URL}/auth/logout`, { method: "POST", credentials: "include" }); } catch {} }
+    setAuthUserId(null); setAuthMode("login"); setAuthPassword(""); setPage("Overview");
+    setTransactions(readLocalJson("sbt-transactions", initialTransactions));
+    setBudgets(readLocalJson("sbt-budgets", initialBudgets));
+    setGoals(readLocalJson("sbt-goals", initialGoals));
+    setScreen("auth");
+  };
 
-  const enterDemo = (event) => {
+  const enterDemo = async (event) => {
     event?.preventDefault();
-    notify("No account was verified. Use the separate demo access button to preview the app safely.");
+    if (!AUTH_API_URL) { notify("Secure sign-in is not configured yet. Deploy the Python API and set VITE_API_BASE_URL first."); return; }
+    setAuthBusy(true);
+    try {
+      const endpoint = authMode === "signup" ? "/auth/register" : "/auth/login";
+      const payload = authMode === "signup" ? { name: authName.trim(), email: authEmail.trim(), password: authPassword } : { email: authEmail.trim(), password: authPassword };
+      const response = await fetch(`${AUTH_API_URL}${endpoint}`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = Array.isArray(data.detail) ? data.detail.map(item => item.msg).join(". ") : data.detail;
+        throw new Error(detail || "Unable to sign in. Please try again.");
+      }
+      setAuthUserId(data.id); setUserName(data.name); setProfileEmail(data.email);
+      try { localStorage.setItem("sbt-user-name", data.name); localStorage.setItem("sbt-user-email", data.email); } catch {}
+      setTransactions(readLocalJson(`sbt-user-${data.id}-transactions`, []));
+      setBudgets(readLocalJson(`sbt-user-${data.id}-budgets`, []));
+      setGoals(readLocalJson(`sbt-user-${data.id}-goals`, []));
+      setPage("Overview"); setScreen("dashboard"); setAuthPassword("");
+      notify(authMode === "signup" ? "Account created securely." : "Signed in successfully.");
+    } catch (error) { notify(error.message || "Secure sign-in failed. Check your connection and try again."); }
+    finally { setAuthBusy(false); }
   };
   const enterDemoWorkspace = () => {
+    setAuthUserId(null);
     const storedName = (() => { try { return localStorage.getItem("sbt-user-name") || ""; } catch { return ""; } })();
-    const name = authMode === "signup" && authName.trim()
-      ? authName.trim()
-      : (storedName || (authEmail.trim() ? authEmail.trim().split("@")[0].replace(/[._-]+/g, " ").replace(/\b\w/g, letter => letter.toUpperCase()) : "Demo User"));
-    setUserName(name);
-    setProfileEmail(authEmail.trim());
+    const name = authMode === "signup" && authName.trim() ? authName.trim() : (storedName || (authEmail.trim() ? authEmail.trim().split("@")[0].replace(/[._-]+/g, " ").replace(/\\b\\w/g, letter => letter.toUpperCase()) : "Demo User"));
+    setUserName(name); setProfileEmail(authEmail.trim());
+    setTransactions(readLocalJson("sbt-transactions", initialTransactions));
+    setBudgets(readLocalJson("sbt-budgets", initialBudgets));
+    setGoals(readLocalJson("sbt-goals", initialGoals));
     try { localStorage.setItem("sbt-user-name", name); if (authEmail.trim()) localStorage.setItem("sbt-user-email", authEmail.trim()); } catch {}
-    setPage("Overview");
-    setScreen("dashboard");
+    setPage("Overview"); setScreen("dashboard");
     notify("Demo workspace opened. This is not a secure personal account.");
   };
   const heroSlides = [
@@ -248,7 +309,7 @@ export default function App() {
 {emoji:"💸",title:"Available to Spend",value:"₹13,000",note:"",tone:"blue"},{emoji:"🍔",title:"Food Budget",value:"₹2,400 / ₹3,000",note:"",tone:"cream"},{emoji:"🎧",title:"Headphones Goal",value:"56% saved",note:"",tone:"lavender"},{emoji:"📉",title:"Spending Trend",value:"12% lower than last month",note:"",tone:"pink"},{emoji:"🔔",title:"Heads up!",value:"85% of budget",note:"",tone:"mint"}].map((card,i)=><article className={`reference-feature-card card-${card.tone}`} key={card.title+"-a"} style={{transform:`rotate(${i%2===0?-2:1.5}deg)`}}><div className="reference-card-emoji">{card.emoji}</div><span className="reference-card-title">{card.title}</span><strong>{card.value}</strong><small>{card.note}</small></article>)}</div><div className="reference-carousel-group" aria-hidden="true">{[
 {emoji:"💸",title:"Available to Spend",value:"₹13,000",note:"",tone:"blue"},{emoji:"🍔",title:"Food Budget",value:"₹2,400 / ₹3,000",note:"",tone:"cream"},{emoji:"🎧",title:"Headphones Goal",value:"56% saved",note:"",tone:"lavender"},{emoji:"📉",title:"Spending Trend",value:"12% lower than last month",note:"",tone:"pink"},{emoji:"🔔",title:"Heads up!",value:"85% of budget",note:"",tone:"mint"}].map((card,i)=><article className={`reference-feature-card card-${card.tone}`} key={card.title+"-b"} style={{transform:`rotate(${i%2===0?-2:1.5}deg)`}}><div className="reference-card-emoji">{card.emoji}</div><span className="reference-card-title">{card.title}</span><strong>{card.value}</strong><small>{card.note}</small><span className="reference-card-index">0{i+1}</span></article>)}</div></div></div><div className="reference-carousel-footer"><div className="reference-carousel-dots">{[0,1,2,3].map(i=><button key={i} aria-label={`Show carousel position ${i+1}`} className={heroSlide===i?"active":""} onClick={()=>setHeroSlide(i)}/>)}</div><span>Little steps. Better money habits. <span>💙</span></span></div></div></section><section className="feature-strip" id="features"><div><span>💳</span><strong>Track every transaction</strong><small>Income and expenses, together</small></div><div><span>🎯</span><strong>Plan your budget</strong><small>Limits that work for real life</small></div><div><span>🌱</span><strong>Grow your savings</strong><small>Make progress feel possible</small></div><div><span>🧠</span><strong>Understand your habits</strong><small>Clear insights, less guesswork</small></div></section><section className="landing-bottom" id="how-it-works"><div><span className="hero-eyebrow">MONEY, MADE CLEAR</span><h2>A little more clarity.<br/><span>A lot more possibility.</span></h2></div><p>Start with what you earn, record what you spend, and give your goals a place in the plan.</p><button className="marketing-cta" onClick={() => setScreen("dashboard")}>Try the interactive demo <span>↗</span></button></section><footer className="marketing-footer" id="privacy"><span>◈ SmartBudget</span><span>Made for mindful money decisions · Demo data stays in this browser</span><button onClick={() => {setAuthMode("signup");setScreen("auth");}}>Get started →</button></footer></main>
   </div>;
-  if (screen === "auth") return <div className="auth-page"><div className="auth-left"><div className="auth-form-wrap"><h1>{authMode === "signup" ? "Sign up" : "Welcome back"}</h1><p>{authMode === "signup" ? "Get started for free. No credit card required." : "Log in to manage your money."}</p><p className="auth-security-note" role="status" style={{margin:"0 0 16px",padding:"8px 11px",borderLeft:"3px solid #4775f4",borderRadius:"0 7px 7px 0",background:"#e8f3ff",color:"#315b90",fontSize:"11px",lineHeight:1.45}}>Demo mode: secure account sign-in is not connected yet.</p><button type="button" className="auth-google" onClick={() => notify("Google sign-in is not configured. Dashboard access remains disabled until authentication is connected.")}><span className="google-g">G</span> Continue with Google</button><div className="auth-or"><span></span> OR <span></span></div><form onSubmit={enterDemo}>{authMode === "signup" && <label>Name<input required autoComplete="name" placeholder="Enter your name" value={authName} onChange={e=>setAuthName(e.target.value)}/></label>}<label>Email<input type="email" required autoComplete="email" placeholder="Enter your email" value={authEmail} onChange={e=>setAuthEmail(e.target.value)}/></label>{authMode === "signup" && <label>Phone number <span className="auth-optional">(Optional)</span><input type="tel" autoComplete="tel" placeholder="Enter your phone number"/></label>}<label>Password<input type="password" required minLength={8} autoComplete={authMode==="signup"?"new-password":"current-password"} placeholder="At least 8 characters" value={authPassword} onChange={e=>setAuthPassword(e.target.value)}/></label><button className="auth-submit" type="submit">{authMode==="signup"?"Create account":"Log in"}</button></form><p className="auth-switch">{authMode==="signup"?"Already have an account?":"New here?"} <button onClick={() => setAuthMode(authMode==="signup"?"login":"signup")}>{authMode==="signup"?"Log in":"Sign up"}</button></p><button type="button" className="auth-demo-access" style={{display:"flex",width:"100%",boxSizing:"border-box",alignItems:"center",justifyContent:"center",gap:"9px",marginTop:"15px",padding:"12px 18px",minHeight:"46px",border:"1px solid #1549b8",borderRadius:"26px",background:"#1549b8",color:"#fff",fontFamily:"Manrope,Arial,sans-serif",fontSize:"13px",fontWeight:800,lineHeight:1.3,cursor:"pointer"}} onClick={enterDemoWorkspace}>Continue to demo workspace <span>→</span></button><button className="auth-back-link" onClick={() => setScreen("landing")}>← Back to SmartBudget</button></div></div><div className="auth-right reference-auth-collage" aria-label="Finance flashcards moving in three vertical columns"><div className="auth-collage-columns"><div className="auth-collage-column column-1"><div className="auth-collage-column-track"><div className="auth-collage-column-group"><div className="auth-collage-card collage-food"><span>🍔</span><small>Food Budget</small><strong>₹2,400 / ₹3,000</strong></div><div className="auth-collage-card collage-headphones"><span>🎧</span><small>Headphones Goal</small><strong>56% saved</strong></div><div className="auth-collage-card collage-available"><span>💸</span><small>Available to Spend</small><strong>₹13,000</strong></div></div><div className="auth-collage-column-group" aria-hidden="true"><div className="auth-collage-card collage-food"><span>🍔</span><small>Food Budget</small><strong>₹2,400 / ₹3,000</strong></div><div className="auth-collage-card collage-headphones"><span>🎧</span><small>Headphones Goal</small><strong>56% saved</strong></div><div className="auth-collage-card collage-available"><span>💸</span><small>Available to Spend</small><strong>₹13,000</strong></div></div></div></div><div className="auth-collage-column column-2"><div className="auth-collage-column-track"><div className="auth-collage-column-group"><div className="auth-collage-card collage-trend"><span>📉</span><small>Spending Trend</small><strong>12% lower this month</strong></div><div className="auth-collage-card collage-needs"><span>🔔</span><small>Heads up!</small><strong>85% of Shopping used</strong></div><div className="auth-collage-card collage-split"><span>👥</span><small>Others owe you</small><strong>₹900</strong></div></div><div className="auth-collage-column-group" aria-hidden="true"><div className="auth-collage-card collage-trend"><span>📉</span><small>Spending Trend</small><strong>12% lower this month</strong></div><div className="auth-collage-card collage-needs"><span>🔔</span><small>Heads up!</small><strong>85% of Shopping used</strong></div><div className="auth-collage-card collage-split"><span>👥</span><small>Others owe you</small><strong>₹900</strong></div></div></div></div><div className="auth-collage-column column-3"><div className="auth-collage-column-track"><div className="auth-collage-column-group"><div className="auth-collage-card collage-trip"><span>🏖️</span><small>Goa Trip</small><strong>₹6,000 / ₹20,000</strong></div><div className="auth-collage-card collage-rent"><span>🗓️</span><small>Rent reminder</small><strong>Due in 3 days</strong></div><div className="auth-collage-card collage-forecast"><span>🔮</span><small>Month-end forecast</small><strong>₹4,200 left</strong></div></div><div className="auth-collage-column-group" aria-hidden="true"><div className="auth-collage-card collage-trip"><span>🏖️</span><small>Goa Trip</small><strong>₹6,000 / ₹20,000</strong></div><div className="auth-collage-card collage-rent"><span>🗓️</span><small>Rent reminder</small><strong>Due in 3 days</strong></div><div className="auth-collage-card collage-forecast"><span>🔮</span><small>Month-end forecast</small><strong>₹4,200 left</strong></div></div></div></div></div></div></div>;
+  if (screen === "auth") return <div className="auth-page"><div className="auth-left"><div className="auth-form-wrap"><h1>{authMode === "signup" ? "Sign up" : "Welcome back"}</h1><p>{authMode === "signup" ? "Get started for free. No credit card required." : "Log in to manage your money."}</p><p className="auth-security-note" role="status" style={{margin:"0 0 16px",padding:"8px 11px",borderLeft:"3px solid #4775f4",borderRadius:"0 7px 7px 0",background:"#e8f3ff",color:"#315b90",fontSize:"11px",lineHeight:1.45}}>{AUTH_API_URL ? "Secure sign-in is enabled. Your credentials are verified by the server." : "Secure sign-in is not configured yet. Use demo access until the Python API is deployed."}</p><button type="button" className="auth-google" onClick={() => notify("Google OAuth is not configured yet. Use email and password after the Python API is deployed.")}><span className="google-g">G</span> Continue with Google</button><div className="auth-or"><span></span> OR <span></span></div><form onSubmit={enterDemo}>{authMode === "signup" && <label>Name<input required autoComplete="name" placeholder="Enter your name" value={authName} onChange={e=>setAuthName(e.target.value)}/></label>}<label>Email<input type="email" required autoComplete="email" placeholder="Enter your email" value={authEmail} onChange={e=>setAuthEmail(e.target.value)}/></label>{authMode === "signup" && <label>Phone number <span className="auth-optional">(Optional)</span><input type="tel" autoComplete="tel" placeholder="Enter your phone number"/></label>}<label>Password<input type="password" required minLength={authMode==="signup"?12:1} autoComplete={authMode==="signup"?"new-password":"current-password"} placeholder={authMode==="signup"?"At least 12 characters":"Enter your password"} value={authPassword} onChange={e=>setAuthPassword(e.target.value)}/></label><button className="auth-submit" type="submit" disabled={authBusy}>{authBusy ? "Please wait…" : authMode==="signup"?"Create account":"Log in"}</button></form><p className="auth-switch">{authMode==="signup"?"Already have an account?":"New here?"} <button onClick={() => setAuthMode(authMode==="signup"?"login":"signup")}>{authMode==="signup"?"Log in":"Sign up"}</button></p><button type="button" className="auth-demo-access" style={{display:"flex",width:"100%",boxSizing:"border-box",alignItems:"center",justifyContent:"center",gap:"9px",marginTop:"15px",padding:"12px 18px",minHeight:"46px",border:"1px solid #1549b8",borderRadius:"26px",background:"#1549b8",color:"#fff",fontFamily:"Manrope,Arial,sans-serif",fontSize:"13px",fontWeight:800,lineHeight:1.3,cursor:"pointer"}} onClick={enterDemoWorkspace}>Continue to demo workspace <span>→</span></button><button className="auth-back-link" onClick={() => setScreen("landing")}>← Back to SmartBudget</button></div></div><div className="auth-right reference-auth-collage" aria-label="Finance flashcards moving in three vertical columns"><div className="auth-collage-columns"><div className="auth-collage-column column-1"><div className="auth-collage-column-track"><div className="auth-collage-column-group"><div className="auth-collage-card collage-food"><span>🍔</span><small>Food Budget</small><strong>₹2,400 / ₹3,000</strong></div><div className="auth-collage-card collage-headphones"><span>🎧</span><small>Headphones Goal</small><strong>56% saved</strong></div><div className="auth-collage-card collage-available"><span>💸</span><small>Available to Spend</small><strong>₹13,000</strong></div></div><div className="auth-collage-column-group" aria-hidden="true"><div className="auth-collage-card collage-food"><span>🍔</span><small>Food Budget</small><strong>₹2,400 / ₹3,000</strong></div><div className="auth-collage-card collage-headphones"><span>🎧</span><small>Headphones Goal</small><strong>56% saved</strong></div><div className="auth-collage-card collage-available"><span>💸</span><small>Available to Spend</small><strong>₹13,000</strong></div></div></div></div><div className="auth-collage-column column-2"><div className="auth-collage-column-track"><div className="auth-collage-column-group"><div className="auth-collage-card collage-trend"><span>📉</span><small>Spending Trend</small><strong>12% lower this month</strong></div><div className="auth-collage-card collage-needs"><span>🔔</span><small>Heads up!</small><strong>85% of Shopping used</strong></div><div className="auth-collage-card collage-split"><span>👥</span><small>Others owe you</small><strong>₹900</strong></div></div><div className="auth-collage-column-group" aria-hidden="true"><div className="auth-collage-card collage-trend"><span>📉</span><small>Spending Trend</small><strong>12% lower this month</strong></div><div className="auth-collage-card collage-needs"><span>🔔</span><small>Heads up!</small><strong>85% of Shopping used</strong></div><div className="auth-collage-card collage-split"><span>👥</span><small>Others owe you</small><strong>₹900</strong></div></div></div></div><div className="auth-collage-column column-3"><div className="auth-collage-column-track"><div className="auth-collage-column-group"><div className="auth-collage-card collage-trip"><span>🏖️</span><small>Goa Trip</small><strong>₹6,000 / ₹20,000</strong></div><div className="auth-collage-card collage-rent"><span>🗓️</span><small>Rent reminder</small><strong>Due in 3 days</strong></div><div className="auth-collage-card collage-forecast"><span>🔮</span><small>Month-end forecast</small><strong>₹4,200 left</strong></div></div><div className="auth-collage-column-group" aria-hidden="true"><div className="auth-collage-card collage-trip"><span>🏖️</span><small>Goa Trip</small><strong>₹6,000 / ₹20,000</strong></div><div className="auth-collage-card collage-rent"><span>🗓️</span><small>Rent reminder</small><strong>Due in 3 days</strong></div><div className="auth-collage-card collage-forecast"><span>🔮</span><small>Month-end forecast</small><strong>₹4,200 left</strong></div></div></div></div></div></div></div>;
   return <div className="app-shell">
     
     {mobileNav && <button className="mobile-scrim" aria-label="Close menu" onClick={() => setMobileNav(false)} />}
