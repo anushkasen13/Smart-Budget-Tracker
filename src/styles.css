@@ -239,3 +239,100 @@ h3{font:700 13px Manrope,sans-serif;letter-spacing:-.15px;margin:0;color:#30344a
 @media(max-width:1250px){.sidebar{width:225px}.main-area{margin-left:225px}.page-content{padding:26px 24px}.topbar{padding:0 24px}.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.summary-amount{font-size:24px}.dashboard-grid{grid-template-columns:minmax(0,1.35fr) minmax(260px,.9fr)}.app-footer{padding-left:24px;padding-right:24px}.trend-panel,.spending-panel,.transactions-panel,.budget-panel{padding:16px}.goals-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:920px){.sidebar{width:254px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:12px 0 40px #20213a15}.sidebar.sidebar-open{transform:translateX(0)}.mobile-scrim{display:block;position:fixed;z-index:25;inset:0;border:0;background:#20213a55}.close-nav{display:grid!important}.main-area{margin-left:0}.mobile-menu{display:grid}.topbar{height:63px;padding:0 22px}.dashboard-grid{grid-template-columns:minmax(0,1fr)}.spending-panel{display:grid;grid-template-columns:1fr 1fr;column-gap:20px}.spending-panel>.panel-heading{grid-column:1/-1}.spending-panel .donut-wrap{grid-row:2/4}.spending-panel .category-legend{align-self:center}.spending-panel .full-link{grid-column:1/-1}.lower-grid{grid-template-columns:1fr 1fr}.summary-grid{gap:12px}.insight-banner{align-items:flex-start}.insight-banner>button{align-self:center}}
 @media(max-width:650px){.topbar{padding:0 14px}.topbar-left{gap:9px}.topbar-actions{gap:7px}.date-chip{font-size:0;padding:8px}.date-chip svg{width:16px;height:16px}.breadcrumb{font-size:10px}.page-content{padding:23px 14px}.welcome-row,.section-heading{align-items:flex-start;flex-direction:column;gap:14px;margin-bottom:19px}.welcome-row .primary-button,.section-heading>.primary-button,.section-heading>.secondary-button{align-self:stretch}.welcome-row h1{font-size:23px}.summary-grid{gap:10px}.summary-card{padding:14px 12px}.summary-top{font-size:9px}.summary-icon{width:28px;height:28px}.summary-amount{font-size:19px;margin:12px 0}.summary-foot{align-items:flex-start;flex-direction:column;gap:5px}.trend-pill{font-size:8px}.muted{font-size:8px}.dashboard-grid{gap:12px}.trend-panel,.spending-panel,.transactions-panel,.budget-panel{padding:15px 13px}.trend-chart{height:205px}.select-chip{font-size:8px;padding:6px}.spending-panel{display:block}.spending-panel .donut-wrap{height:185px}.spending-panel .category-legend{margin-top:0}.spending-panel .full-link{margin-top:14px}.lower-grid{grid-template-columns:1fr;gap:12px}.insight-banner{flex-wrap:wrap;padding:13px}.insight-banner>div:nth-child(2){min-width:calc(100% - 55px)}.insight-banner>button{margin-left:50px}.app-footer{padding:13px 14px 17px;align-items:flex-start;flex-direction:column}.heading-actions{width:100%}.heading-actions>*{flex:1}.table-panel{padding:13px}.table-tools{align-items:stretch;flex-direction:column}.search-box{max-width:none}.filter-select{align-self:flex-start}.budget-summary-row{grid-template-columns:1fr;gap:9px}.budget-summary-row .summary-card{padding:14px}.budget-summary-row .large-number{font-size:20px}.budget-card-grid,.goals-grid,.insight-cards,.calculator-grid,.settings-grid,.analytics-summary{grid-template-columns:1fr}.goals-intro{padding:15px;gap:10px}.goals-intro strong{font-size:17px}.goals-intro span{font-size:9px}.goal-total-icon{width:39px;height:39px}.large-trend-chart{height:250px}.insight-card p{min-height:0}.calculator-panel,.settings-card{padding:17px}.form-two-col{gap:8px}.transaction-modal{padding:18px}.modal-heading h2{font-size:19px}.section-heading h2{font-size:22px}}
+
+
+/* Reference-screen alignment: deep navy workspace with electric-blue accents. */
+:root{--ink:#e8edff;--muted:#91a2cb;--line:#26345c;--surface:#151f3d;color-scheme:dark}
+body,.app-shell{background:#0e1731;color:#e8edff}
+.sidebar{background:#111b38;border-right-color:#263354;color:#e8edff}
+.brand strong{color:#f0f3ff}
+.brand small{color:#8495bf}
+.brand-mark{background:#2f63e9;box-shadow:0 5px 13px #1645ba33}
+.profile-switch{background:#172344;border-color:#29385f;color:#e1e8ff}
+.profile-switch small{color:#91a2c9}
+.nav-label{color:#7183ad}
+.nav-item{color:#9cadd3}
+.nav-item:hover{background:#1b2a51;color:#b9caff}
+.nav-item.active{background:#223768;color:#6f9bff}
+.upgrade-card{border-color:#29375f;background:linear-gradient(140deg,#172445,#1b2750)}
+.upgrade-card strong{color:#e8edff}
+.upgrade-card p{color:#9aabd0}
+.upgrade-card button{color:#79a0ff}
+.sidebar-foot{color:#8394bb}
+.main-area{background:#0e1731}
+.topbar{background:#101a36;border-bottom-color:#263354}
+.breadcrumb{color:#7e91ba}.breadcrumb strong{color:#dce5ff}.breadcrumb span{color:#425078}
+.date-chip{border-color:#29375c;color:#a1b1d2;background:#141f3d}
+.icon-button{color:#9badd3}
+.icon-button:hover{background:#1d2d55;color:#8cb0ff}
+.top-avatar,.avatar{background:#203a70;color:#91b5ff}
+h1,h2,h3{color:#e8edff}
+.eyebrow{color:#8296c3}
+.welcome-row p,.section-heading p{color:#91a2c8}
+.primary-button{background:#386cf0;border-color:#386cf0;color:#fff;box-shadow:0 4px 12px #2255d526}
+.primary-button:hover{background:#4b7af6}
+.secondary-button{background:#172344;color:#b7c5e6;border-color:#2c3a61}
+.secondary-button:hover{background:#1d2d54;border-color:#4665a9}
+.danger-button{border-color:#613b54;background:#2d203d;color:#ff9dba}
+.summary-card,.panel{background:#151f3d;border-color:#26345b;box-shadow:0 7px 22px #050b1d16}
+.summary-top,.card-caption{color:#9aabd0}
+.summary-amount,.large-number,.budget-numbers strong,.goal-amounts strong{color:#eef2ff}
+.summary-icon.violet{background:#25356b;color:#91a5ff}.summary-icon.green{background:#173f45;color:#62d8b6}.summary-icon.orange{background:#49382d;color:#ffc07c}.summary-icon.pink{background:#482c4d;color:#f5a6d0}
+.trend-pill{background:#17413f;color:#70d7ba}
+.metric-note.positive{color:#67d7b4}
+.metric-note.neutral{color:#b4a7e8}
+.mini-progress{background:#263354}
+.income-progress{background:#35c79f}.expense-progress{background:#f3a65d}.goal-progress{background:#d987e9}
+.select-chip{background:#172344;border-color:#2b395f;color:#a5b6da}
+.chart-legend,.chart-footnote{color:#91a2c9}
+.chart-footnote{border-color:#27365a}
+.footnote-dot{background:#e9bb64}
+.chart-footnote button,.text-button,.full-link{color:#82a5ff}
+.more-button{color:#93a5cb}
+.more-button:hover{background:#202f57;color:#92b1ff}
+.transaction-row{border-color:#253354}
+.transaction-main strong{color:#e2e9ff}
+.transaction-main span,.transaction-amount span{color:#899cc4}
+.transaction-amount strong.amount-expense{color:#ff817e}
+.transaction-amount strong.amount-income{color:#49d0a7}
+.category-line strong{color:#d9e2fc}
+.category-name{color:#a3b2d3}
+.budget-row-top>span{color:#d8e2fc}
+.budget-row-top small{color:#d6e0fa}.budget-row-top em{color:#8294bc}
+.progress-track{background:#293657}
+.insight-banner{border-color:#2c3b67;background:linear-gradient(105deg,#172448,#1a2850)}
+.insight-symbol{background:#28386c;color:#9aabff}
+.insight-banner strong{color:#e6ecff}.insight-banner p{color:#9aabd0}
+.app-footer{color:#8294bc}
+.search-box,.filter-select{border-color:#2b395f;background:#111b38;color:#91a4cd}
+.search-box input,.filter-select select{color:#dce6ff}
+.search-box input::placeholder{color:#7185af}
+.table-tools{border-color:#27365a}
+.budget-alert{background:#493829;color:#ffc77d}
+.goals-intro{background:#151f3d;border-color:#26345b}
+.goals-intro span,.goal-due,.goal-amounts span,.goal-bottom{color:#91a2c9}
+.goal-total-icon{background:#25356b;color:#9aabff}
+.goal-art{background:#22335c!important}
+.helper-note{color:#91a2c9}
+.demo-chip{color:#9db0ff;background:#243465}
+.insight-card-icon.lavender{background:#27376b;color:#9eafff}.insight-card-icon.mint{background:#19434a;color:#65d7bb}.insight-card-icon.peach{background:#49382d;color:#ffc07c}.insight-card-icon.blue{background:#1e3966;color:#8db8ff}
+.insight-tag{color:#8297c5}
+.insight-card p{color:#9aaad0}
+.insight-metric{border-color:#28375b}.insight-metric span{color:#9aaad0}
+.calculator-icon{background:#27376b;color:#9eafff}.calculator-icon.mint{background:#19434a;color:#65d7bb}
+.calculator-panel>p,.calculator-panel>small{color:#9aaad0}
+.calculator-panel input,.transaction-modal input,.transaction-modal select,.transaction-modal textarea{border-color:#2c3b60;background:#101a36;color:#e5ecff}
+.calculator-result{background:#223362}.calculator-result span{color:#a5b5de}.calculator-result strong{color:#a8b8ff}
+.calculator-static{border-color:#29375a}.calculator-static span{color:#9aaad0}.calculator-static strong{color:#e2eaff}
+.settings-icon{background:#27376b;color:#9eafff}.settings-card p{color:#9aaad0}
+.faq-item{border-color:#29375a}.faq-item summary{color:#dfe7ff}.faq-item p{color:#9aaad0}
+.faq-panel{background:#151f3d;border-color:#26345b}
+.modal-backdrop{background:#050a19b8}
+.transaction-modal{background:#151f3d;color:#e8edff;border:1px solid #2c3b60}
+.modal-disclaimer{color:#91a2c9}
+.type-toggle button{background:#111b38;border-color:#2b395f;color:#9aabd0}
+.type-toggle button.selected.expense-selected{background:#462d3c;border-color:#7c4554;color:#ff9d9b}
+.type-toggle button.selected.income-selected{background:#17423f;border-color:#286e62;color:#73e0bd}
+.toast{background:#e7edff;color:#182445}
+.empty-state{color:#91a2c9}.empty-state strong{color:#dbe5ff}
+@media(max-width:920px){.sidebar{box-shadow:12px 0 40px #02071388}.mobile-scrim{background:#030817b8}}
