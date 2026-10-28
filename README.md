@@ -66,3 +66,22 @@ Dashboard trends and spending breakdowns are calculated from the transactions cu
 - Transfers between accounts are neither income nor spending.
 - Derived totals should be computed from ledger entries rather than manually maintained totals.
 - Forecasts must be labelled estimates and disclose their assumptions.
+
+
+## Secure email/password authentication (Python API)
+
+The repository now includes a FastAPI authentication service in `backend/`. The frontend only uses real sign-in when `VITE_API_BASE_URL` points to a deployed HTTPS API; otherwise the login form stays fail-closed and the separate demo workspace remains available for sample-data previews.
+
+### Deploy the API
+
+1. In Render, create a new Blueprint from this repository and let it read `render.yaml`.
+2. The blueprint provisions a Python web service and PostgreSQL database. Wait for both to finish provisioning.
+3. In the `smartbudget-auth-api` service environment, set `FRONTEND_ORIGINS` to the exact HTTPS origin of your deployed frontend (for example `https://your-app.vercel.app`, with no path or trailing slash). Keep `APP_ENV=production` and `COOKIE_SECURE=true`.
+4. In Vercel, set `VITE_API_BASE_URL` to the API's HTTPS origin (for example `https://smartbudget-auth-api.onrender.com`) and redeploy the frontend.
+5. Visit the API's `/health` endpoint and test registration, logout, and wrong-password rejection before using accounts.
+
+Local API setup and required environment variables are documented in `backend/README.md`.
+
+### Important security boundary
+
+The API verifies email/password on the server, hashes passwords with Argon2, and uses revocable HttpOnly sessions. However, transactions, budgets, and goals are still stored in browser localStorage; namespacing them by account ID is not equivalent to server-side access control. Do not enter real or sensitive financial information until those records are moved behind authenticated, per-user backend endpoints. Google OAuth is not yet implemented.
