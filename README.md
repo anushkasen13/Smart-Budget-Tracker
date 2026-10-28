@@ -32,13 +32,18 @@ npm run preview
 
 - Dashboard with income, expense, balance and goal summaries
 - Add income/expense transaction form
-- Transaction search and type filtering
-- CSV export
-- Monthly budget overview and budget-limit editing
-- Savings goal creation and manual allocation
-- Basic charts and rule-based money prompts
+- Transaction search, type filtering, and transaction deletion
+- CSV export plus full JSON backup/restore for transactions, budgets, and goals
+- Monthly budget overview and budget-limit editing; spent totals are derived from current-month expense records
+- Savings goal creation and manual allocation with browser persistence
+- Ledger-driven six-month trend and category breakdown charts
+- Transparent rule-based money prompts and calculators
 - Bill-splitting and daily-spending calculators
 - Responsive navigation, help page and privacy notes
+
+## Important scope boundary
+
+This is still a **local-only demo**, not a secure production finance application. It has no real user accounts, backend API, cloud database, bank integration, or server-side recovery. Local browser storage is not encrypted by this app. The demo begins with sample transactions, budgets, and goals; reset or delete those before recording a personal-data demo. JSON backup/restore is provided, but the user is responsible for protecting backup files.
 
 ## Not implemented yet
 
@@ -48,6 +53,8 @@ npm run preview
 - Automated recurring transactions/reminders
 - Shared expenses with settlement tracking
 - Transaction editing/deletion and full calendar view
+- Secure account creation/login, password recovery, and account-specific cloud data
+- Backend API and production database
 - Historical analytics derived exclusively from the user's ledger
 - Tested forecasting, anomaly detection, or trained ML models
 - Production security review and deployment configuration
