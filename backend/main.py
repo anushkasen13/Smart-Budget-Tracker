@@ -207,7 +207,10 @@ def login(request: Request, body: LoginBody, response: Response, db: Session = D
     identifier = body.identifier.strip()
     normalized_identifier = identifier.lower()
     phone_identifier = normalize_phone(identifier) if all(character.isdigit() or character in "+-() " for character in identifier) else None
-    user = db.scalar(select(User).where(or_(User.username == normalized_identifier, User.phone == phone_identifier, User.email == normalized_identifier)))
+    lookup_conditions = [User.username == normalized_identifier, User.email == normalized_identifier]
+    if phone_identifier:
+        lookup_conditions.append(User.phone == phone_identifier)
+    user = db.scalar(select(User).where(or_(*lookup_conditions)))
     if not user or not password_hasher.verify(body.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID/phone number or password is incorrect.")
     create_session(db, user, response)
