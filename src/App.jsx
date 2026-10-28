@@ -12,7 +12,7 @@ import {
   Tooltip, XAxis, YAxis
 } from "recharts";
 
-const AUTH_API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\\/+$/, "");
+const AUTH_API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 const readLocalJson = (key, fallback) => { try { const value = localStorage.getItem(key); return value ? JSON.parse(value) : fallback; } catch { return fallback; } };
 
 const initialTransactions = [
