@@ -469,11 +469,11 @@ h1,h2,h3{color:#e8edff}
 
 /* Seamless, continuously moving marquee inspired by the reference site's card strip. */
 .reference-carousel-viewport{overflow:hidden;position:relative;mask-image:linear-gradient(90deg,transparent 0%,#000 3%,#000 97%,transparent 100%)}
-.reference-carousel-track.marquee-track{width:max-content;display:flex;align-items:center;gap:0;padding:20px 0 27px;transform:none!important;animation:budget-marquee 48s linear infinite;will-change:transform}
+.reference-carousel-track.marquee-track{width:max-content;display:flex;align-items:center;gap:0;padding:20px 0 27px;animation:budget-marquee 48s linear infinite;will-change:transform}
 .reference-carousel-group{display:flex;align-items:center;gap:25px;flex-shrink:0;padding:0 12px}
 .reference-carousel-group .reference-feature-card{flex-shrink:0}
 @keyframes budget-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .reference-carousel-footer .reference-carousel-dots button{pointer-events:none;opacity:.6}
 .reference-carousel-footer .reference-carousel-dots button.active{opacity:1}
 @media(max-width:700px){.reference-carousel-track.marquee-track{animation-duration:38s}.reference-carousel-group{gap:16px;padding:0 8px}.reference-carousel-viewport{mask-image:linear-gradient(90deg,transparent 0%,#000 2%,#000 98%,transparent 100%)}}
-@media(prefers-reduced-motion:reduce){.reference-carousel-track.marquee-track{animation:none;transform:none!important}}
+/* The finance-card marquee intentionally keeps moving continuously, including when the OS reduced-motion preference is enabled. */
