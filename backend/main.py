@@ -69,6 +69,14 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="SmartBudget Authentication API", version="1.0.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+@app.middleware("http")
+async def enforce_browser_origin(request: Request, call_next):
+    if APP_ENV == "production" and request.method in {"POST", "PATCH", "PUT", "DELETE"}:
+        origin = request.headers.get("origin", "").rstrip("/")
+        if origin not in FRONTEND_ORIGINS:
+            return Response(content='{"detail":"Request origin is not allowed."}', status_code=403, media_type="application/json")
+    return await call_next(request)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=FRONTEND_ORIGINS,
