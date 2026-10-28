@@ -12,7 +12,7 @@ import {
   Tooltip, XAxis, YAxis
 } from "recharts";
 
-const AUTH_API_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(new RegExp("/+$"), "");
+const AUTH_API_URL = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "/api" : "/api")).replace(new RegExp("/+$"), "");
 const readLocalJson = (key, fallback) => { try { const value = localStorage.getItem(key); return value ? JSON.parse(value) : fallback; } catch { return fallback; } };
 
 const initialTransactions = [
@@ -269,7 +269,7 @@ export default function App() {
 
   const enterDemo = async (event) => {
     event?.preventDefault();
-    if (!AUTH_API_URL) { notify("Secure sign-in is not configured yet. Deploy the Python API and set VITE_API_BASE_URL first."); return; }
+    if (!AUTH_API_URL) { notify("Sign-in service is unavailable. Please try again shortly."); return; }
     setAuthBusy(true);
     try {
       const endpoint = authMode === "signup" ? "/auth/register" : "/auth/login";
@@ -288,7 +288,7 @@ export default function App() {
       setGoals(readLocalJson(`sbt-user-${data.id}-goals`, []));
       setPage("Overview"); setScreen("dashboard"); setAuthPassword("");
       notify(authMode === "signup" ? "Account created securely." : "Signed in successfully.");
-    } catch (error) { notify(error.message || "Sign-in failed. Check your User ID/phone number and password."); }
+    } catch (error) { notify(error instanceof TypeError ? "Cannot reach the sign-in service. The backend may be offline or still deploying." : (error.message || "Sign-in failed. Check your email, User ID or phone number and password.")); }
     finally { setAuthBusy(false); }
   };
   const enterDemoWorkspace = () => {
