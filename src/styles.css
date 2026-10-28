@@ -662,3 +662,37 @@ body,.app-shell,.main-area{background:#141e38;color:#e8edff}
 :root[data-theme="light"] .theme-option{background:#fff;color:#293c59;border-color:#dce5f0}
 :root[data-theme="light"] .theme-option.selected{background:#eef4ff;border-color:#4d78e8}
 @media(max-width:700px){.theme-options{grid-template-columns:1fr}.theme-option{min-height:48px}}
+
+
+/* Top-right profile menu and editable profile page. */
+.profile-menu-wrap{position:relative;display:flex;align-items:center}
+.profile-avatar-button{border:0;cursor:pointer;font:inherit;font-size:11px;font-weight:700;display:grid;place-items:center}
+.profile-avatar-button:focus-visible{outline:2px solid #84a9ff;outline-offset:3px}
+.profile-dropdown{position:absolute;z-index:80;right:0;top:calc(100% + 12px);width:230px;padding:8px;border:1px solid #2c3b5e;border-radius:14px;background:#172341;box-shadow:0 18px 44px #050b1c66;display:flex;flex-direction:column;gap:3px}
+.profile-dropdown-head{padding:10px 10px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.profile-dropdown-head strong{font-size:13px;color:#f0f4ff;overflow-wrap:anywhere}
+.profile-dropdown-head span{font-size:11px;color:#9eafd2;overflow-wrap:anywhere}
+.profile-dropdown>button{width:100%;display:flex;align-items:center;gap:10px;text-align:left;padding:10px;border:0;border-radius:9px;background:transparent;color:#d8e3fa;font:inherit;font-size:12px;cursor:pointer}
+.profile-dropdown>button:hover{background:#26395f}
+.profile-dropdown-divider{height:1px;background:#2b3a5b;margin:4px 3px}
+.profile-dropdown>button.profile-logout{color:#ff9eb0}
+.profile-page-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,.7fr);gap:18px;align-items:start}
+.profile-edit-card,.profile-info-card{padding:24px}
+.profile-large-avatar{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(140deg,#4775f4,#8267e9);color:#fff;font-size:18px;font-weight:800;margin-bottom:17px}
+.profile-edit-card h3,.profile-info-card h3{margin:0 0 8px}
+.profile-edit-card>p,.profile-info-card>p{color:var(--muted);font-size:13px;line-height:1.65;margin:0 0 20px}
+.profile-edit-form{display:flex;flex-direction:column;gap:16px;max-width:540px}
+.profile-edit-form label{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:12px;font-weight:600}
+.profile-edit-form input{width:100%;height:44px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;outline:none}
+.profile-edit-form input:focus{border-color:#6387ef;box-shadow:0 0 0 3px #6387ef20}
+.profile-edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:5px}
+.profile-info-card{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.profile-info-card .danger-button{display:flex;align-items:center;gap:8px}
+:root[data-theme="light"] .profile-dropdown{background:#fff;border-color:#dce5f0;box-shadow:0 18px 44px #24355022}
+:root[data-theme="light"] .profile-dropdown-head strong{color:#293c59}
+:root[data-theme="light"] .profile-dropdown-head span{color:#71829d}
+:root[data-theme="light"] .profile-dropdown>button{color:#405674}
+:root[data-theme="light"] .profile-dropdown>button:hover{background:#eef3fb}
+:root[data-theme="light"] .profile-dropdown-divider{background:#e0e7f1}
+:root[data-theme="light"] .profile-dropdown>button.profile-logout{color:#b43c5e}
+@media(max-width:720px){.profile-page-layout{grid-template-columns:1fr}.profile-dropdown{right:-4px;width:220px}.profile-edit-card,.profile-info-card{padding:18px}}
