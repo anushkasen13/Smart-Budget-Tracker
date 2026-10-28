@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/api/auth/:path*",
+      "destination": "https://smartbudget-auth-api.onrender.com/auth/:path*"
+    },
+    {
+      "source": "/api/health",
+      "destination": "https://smartbudget-auth-api.onrender.com/health"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://smartbudget-auth-api.onrender.com/:path*"
     }
