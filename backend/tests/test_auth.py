@@ -13,7 +13,7 @@ def test_register_login_by_user_id_and_logout():
     username = f"user_{uuid4().hex[:12]}"
     phone = f"+9198{uuid4().int % 100000000:08d}"[:13]
     password = "CorrectHorseBatteryStaple2026!"
-    response = client.post("/auth/register", json={"name": "Test User", "username": username, "phone": phone, "password": password})
+    response = client.post("/auth/register", json={"name": "Test User", "username": username, "contact": phone, "password": password})
     assert response.status_code == 201
     created = response.json()
     assert created["username"] == username
@@ -37,7 +37,7 @@ def test_login_by_phone_number():
     username = f"phone_{uuid4().hex[:12]}"
     phone = f"+9198{uuid4().int % 100000000:08d}"[:13]
     password = "CorrectHorseBatteryStaple2026!"
-    created = client.post("/auth/register", json={"name": "Phone User", "username": username, "phone": phone, "password": password})
+    created = client.post("/auth/register", json={"name": "Phone User", "username": username, "contact": phone, "password": password})
     assert created.status_code == 201
     response = client.post("/auth/login", json={"identifier": phone, "password": password})
     assert response.status_code == 200
@@ -46,11 +46,24 @@ def test_login_by_phone_number():
 
 def test_duplicate_user_id_is_rejected():
     username = f"dupe_{uuid4().hex[:12]}"
-    body = {"name": "Another User", "username": username, "password": "AnotherStrongPassword2026!"}
+    body = {"name": "Another User", "username": username, "contact": f"{username}@example.com", "password": "AnotherStrongPassword2026!"}
     assert client.post("/auth/register", json=body).status_code == 201
     assert client.post("/auth/register", json=body).status_code == 409
 
 
 def test_registration_rejects_short_password():
-    response = client.post("/auth/register", json={"name": "Weak Password", "username": f"weak_{uuid4().hex[:12]}", "password": "short"})
+    response = client.post("/auth/register", json={"name": "Weak Password", "username": f"weak_{uuid4().hex[:12]}", "contact": f"weak_{uuid4().hex[:8]}@example.com", "password": "short"})
     assert response.status_code == 422
+
+
+def test_register_and_login_by_email_with_eight_character_password():
+    username = f"email_{uuid4().hex[:12]}"
+    email = f"{username}@example.com"
+    password = "pass1234"
+    response = client.post("/auth/register", json={"name": "Email User", "username": username, "contact": email, "password": password})
+    assert response.status_code == 201
+    assert response.json()["username"] == username
+    client.post("/auth/logout")
+    login = client.post("/auth/login", json={"identifier": email, "password": password})
+    assert login.status_code == 200
+    assert login.json()["name"] == "Email User"
