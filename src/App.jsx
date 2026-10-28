@@ -278,13 +278,23 @@ export default function App() {
       const loginIdentifier = authIdentifier.trim();
       const payload = authMode === "signup" ? { name: authName.trim(), username: authUsername.trim(), contact: authEmail.trim(), password: authPassword } : { identifier: loginIdentifier, email: loginIdentifier.includes("@") ? loginIdentifier.toLowerCase() : undefined, password: authPassword };
       const response = await fetch(`${AUTH_API_URL}${endpoint}`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const data = await response.json().catch(() => ({}));
+      const responseText = await response.text();
+      let data = {};
+      try { data = responseText ? JSON.parse(responseText) : {}; } catch {}
       if (!response.ok) {
         const detail = Array.isArray(data.detail) ? data.detail.map(item => item.msg).join(". ") : data.detail;
-        throw new Error(detail || "Unable to sign in. Check your email, User ID or phone number and password.");
+        const action = authMode === "signup" ? "create your account" : "sign in";
+        const statusHint = response.status === 404
+          ? "The authentication API route was not found. Check the Vercel /api rewrite and Render deployment."
+          : response.status >= 500
+            ? "The authentication server returned an error. Check the Render service logs and database connection."
+            : response.status === 403
+              ? "The request was blocked by the API origin check. Check FRONTEND_ORIGINS in Render."
+              : "";
+        throw new Error(detail || `Unable to ${action} (HTTP ${response.status}). ${statusHint || "Please check the details and try again."}`);
       }
       setAuthUserId(data.id); setUserName(data.name); setProfileUsername(data.username); setProfileEmail(data.phone || "");
-      try { localStorage.setItem("sbt-user-name", data.name); localStorage.setItem("sbt-user-email", data.email); } catch {}
+      try { localStorage.setItem("sbt-user-name", data.name); localStorage.setItem("sbt-user-email", data.phone || ""); } catch {}
       setTransactions(readLocalJson(`sbt-user-${data.id}-transactions`, []));
       setBudgets(readLocalJson(`sbt-user-${data.id}-budgets`, []));
       setGoals(readLocalJson(`sbt-user-${data.id}-goals`, []));
