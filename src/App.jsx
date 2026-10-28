@@ -249,7 +249,7 @@ export default function App() {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.detail || "Unable to update your profile.");
         setUserName(data.name); setProfileUsername(data.username); setProfileEmail(data.phone || "");
-        try { localStorage.setItem("sbt-user-name", data.name); localStorage.setItem("sbt-user-email", data.email); } catch {}
+        try { localStorage.setItem("sbt-user-name", data.name); localStorage.setItem("sbt-user-email", data.phone || ""); } catch {}
         notify("Profile updated."); return;
       } catch (error) { notify(error.message || "Unable to update your profile."); return; }
     }
@@ -298,7 +298,7 @@ export default function App() {
     setTransactions(readLocalJson("sbt-transactions", initialTransactions));
     setBudgets(readLocalJson("sbt-budgets", initialBudgets));
     setGoals(readLocalJson("sbt-goals", initialGoals));
-    try { localStorage.setItem("sbt-user-name", name); if (authEmail.trim()) localStorage.setItem("sbt-user-email", authEmail.trim()); } catch {}
+    try { localStorage.setItem("sbt-user-name", name); if (authPhone.trim()) localStorage.setItem("sbt-user-email", authPhone.trim()); } catch {}
     setPage("Overview"); setScreen("dashboard");
     notify("Demo workspace opened. This is not a secure personal account.");
   };
