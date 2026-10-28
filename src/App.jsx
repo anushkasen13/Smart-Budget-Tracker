@@ -156,7 +156,7 @@ export default function App() {
     try {
       const data = JSON.parse(await file.text());
       if (!data || !Array.isArray(data.transactions) || !Array.isArray(data.budgets) || !Array.isArray(data.goals)) throw new Error("Invalid backup structure");
-      const validTransactions = data.transactions.every(t => t && t.id !== undefined && typeof t.title === "string" && ["income", "expense"].includes(t.type) && Number.isFinite(Number(t.amount)) && Number(t.amount) > 0 && /^\\d{4}-\\d{2}-\\d{2}$/.test(t.date));
+      const validTransactions = data.transactions.every(t => t && t.id !== undefined && typeof t.title === "string" && ["income", "expense"].includes(t.type) && Number.isFinite(Number(t.amount)) && Number(t.amount) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(t.date));
       if (!validTransactions) throw new Error("Invalid transaction data");
       if (!confirm("Import this backup and replace the data currently stored in this browser?")) return;
       setTransactions(data.transactions); setBudgets(data.budgets); setGoals(data.goals); notify("Backup restored successfully.");
