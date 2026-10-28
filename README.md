@@ -47,12 +47,10 @@ This is still a **local-only demo**, not a secure production finance application
 
 ## Not implemented yet
 
-- Secure sign-up/login, password recovery, and account-specific cloud data
-- API/backend and production database
 - Cross-device backup and restore
 - Automated recurring transactions/reminders
 - Shared expenses with settlement tracking
-- Transaction editing/deletion and full calendar view
+- Transaction editing and full calendar view
 - Secure account creation/login, password recovery, and account-specific cloud data
 - Backend API and production database
 - Historical analytics derived exclusively from the user's ledger
